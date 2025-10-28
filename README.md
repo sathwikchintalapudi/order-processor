@@ -153,7 +153,7 @@ mvn clean package
 mvn spring-boot:run
 
 # Option 2: Using JAR
-java -jar target/hft-order-matching-engine-1.0.0.jar
+java -jar target/trading-order-processor-0.0.1-SNAPSHOT.jar
 ```
 
 
@@ -163,7 +163,7 @@ java -jar target/hft-order-matching-engine-1.0.0.jar
 
 ### Submit Order
 
-**Endpoint:** `POST /api/orders/submit`
+**Endpoint:** `POST /orders/submit`
 
 **Request:**
 ```bash
@@ -181,6 +181,39 @@ curl -X POST http://localhost:8080/orders/submit \
 **Response (Success):**
 ```json
 ORDER_ID -> UUID FORMAT
+```
+
+**Sample requests:**
+```bash
+curl -X POST http://localhost:8080/orders/submit \
+  -H "Content-Type: application/json" \
+  -d '{
+    "symbol": "GOOG",
+    "side": "BUY",
+    "price": 150.50,
+    "quantity": 100,
+    "traderId": "TRADER001"
+  }'
+
+curl -X POST http://localhost:8080/orders/submit \
+  -H "Content-Type: application/json" \
+  -d '{
+    "symbol": "GOOG",
+    "side": "BUY",
+    "price": 151.50,
+    "quantity": 100,
+    "traderId": "TRADER001"
+  }'
+
+curl -X POST http://localhost:8080/orders/submit \
+  -H "Content-Type: application/json" \
+  -d '{
+    "symbol": "GOOG",
+    "side": "SELL",
+    "price": 149,
+    "quantity": 100,
+    "traderId": "TRADER001"
+  }'
 ```
 
 ## ⚡ Performance Benchmarks
@@ -248,11 +281,6 @@ java -jar hft-order-matching-engine.jar \
 4. **GC Pause Time** - Should be < 10ms
 5. **Order Book Depth** - Number of resting orders per symbol
 
-### Logging
-
-Logs are written to:
-- Console: INFO level
-- File: `logs/trading-engine.log` (DEBUG level)
 
 **Key Log Messages:**
 ```
@@ -261,7 +289,6 @@ Logs are written to:
 🔴 ORDER REJECTED: Ring buffer full!
 ⚠️ WARNING: Ring buffer 85.0% full
 ```
-
 
 
 ## 🎓 Learning Resources
