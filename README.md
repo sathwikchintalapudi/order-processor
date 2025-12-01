@@ -77,16 +77,14 @@ Process millions of orders per second with microsecond latency for:
 │ REST API    │────┐
 ├─────────────┤    │
 │ FIX Gateway │────┼──→ OrderPublisher ──→ RingBuffer ──→ Event Handlers ──→ Trade Publication
-├─────────────┤    │         ▲                  │              │
-│ WebSocket   │────┘         │                  │              │
-└─────────────┘              │                  ▼              ▼
-                             │            [Validator]    [Market Data]
-                             │            [RiskCheck]    [Notifications]
-                             │            [Matcher]      [Positions]
-                             │            [Publisher]
-                             │                  │
-                             └──────────────────┘
-                                  (Order Book)
+├─────────────┤    │                                         │
+│ WebSocket   │────┘                                         │
+└─────────────┘                                              ▼
+                                                         [Validator]
+                                                         [RiskCheck]
+                                                          [Matcher]  
+                                                       [Notifications]
+                                                         [Publisher]
 ```
 
 ### Disruptor Pipeline
@@ -138,8 +136,8 @@ jq (for JSON formatting)
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/yourusername/hft-order-matching-engine.git
-cd hft-order-matching-engine
+git clone https://github.com/sathwikchintalapudi/order-processor.git
+cd order-processor-main
 ```
 
 2. **Build the project**
@@ -163,7 +161,7 @@ java -jar target/trading-order-processor-0.0.1-SNAPSHOT.jar
 
 ### Submit Order
 
-**Endpoint:** `POST /orders/submit`
+**Endpoint:** `POST /api/orders/submit`
 
 **Request:**
 ```bash
@@ -183,83 +181,12 @@ curl -X POST http://localhost:8080/orders/submit \
 ORDER_ID -> UUID FORMAT
 ```
 
-**Sample requests:**
-```bash
-curl -X POST http://localhost:8080/orders/submit \
-  -H "Content-Type: application/json" \
-  -d '{
-    "symbol": "GOOG",
-    "side": "BUY",
-    "price": 150.50,
-    "quantity": 100,
-    "traderId": "TRADER001"
-  }'
-
-curl -X POST http://localhost:8080/orders/submit \
-  -H "Content-Type: application/json" \
-  -d '{
-    "symbol": "GOOG",
-    "side": "BUY",
-    "price": 151.50,
-    "quantity": 100,
-    "traderId": "TRADER001"
-  }'
-
-curl -X POST http://localhost:8080/orders/submit \
-  -H "Content-Type: application/json" \
-  -d '{
-    "symbol": "GOOG",
-    "side": "SELL",
-    "price": 149,
-    "quantity": 100,
-    "traderId": "TRADER001"
-  }'
-```
-
-## ⚡ Performance Benchmarks
-
-### Target Metrics
-
-| Metric | Target | Achieved |
-|--------|--------|----------|
-| **Order Processing Latency** | < 10μs | ~8μs (p99) |
-| **Throughput** | 1M+ orders/sec | 1.2M orders/sec |
-| **Matching Latency** | < 5μs | ~3μs (average) |
-| **GC Overhead** | < 1% | 0.2% |
-
-### Test Results (Local Machine)
-
-```
-Environment: MacBook Pro M1, 16GB RAM
-JVM: OpenJDK 17, -Xmx4G -Xms4G
-
-Single Order Processing:
-  Mean: 7.2μs
-  p50:  5.1μs
-  p95:  8.3μs
-  p99:  12.7μs
-  p99.9: 24.1μs
-
-Throughput Test (1M orders):
-  Duration: 0.83 seconds
-  Orders/sec: 1,204,819
-  Rejections: 0
-```
-
-### Comparison: BlockingQueue vs Disruptor
-
-| Metric | BlockingQueue | LMAX Disruptor | Improvement |
-|--------|--------------|----------------|-------------|
-| Latency (p99) | 127μs | 12.7μs | **10x faster** |
-| Throughput | 120K ops/sec | 1.2M ops/sec | **10x higher** |
-| GC Pause | 5% | 0.2% | **25x lower** |
-
 ---
 
 ### JVM Parameters (Production)
 
 ```bash
-java -jar hft-order-matching-engine.jar \
+java -jar trading-order-processor-0.0.1-SNAPSHOT.jar \
   -Xmx8G \                          # Max heap 8GB
   -Xms8G \                          # Initial heap 8GB (same as max)
   -XX:+UseG1GC \                    # G1 garbage collector
@@ -289,6 +216,7 @@ java -jar hft-order-matching-engine.jar \
 🔴 ORDER REJECTED: Ring buffer full!
 ⚠️ WARNING: Ring buffer 85.0% full
 ```
+
 
 
 ## 🎓 Learning Resources
