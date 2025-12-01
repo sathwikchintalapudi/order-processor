@@ -17,12 +17,6 @@
 - [Technology Stack](#technology-stack)
 - [Getting Started](#getting-started)
 - [API Documentation](#api-documentation)
-- [Performance Benchmarks](#performance-benchmarks)
-- [Project Structure](#project-structure)
-- [Configuration](#configuration)
-- [Testing](#testing)
-- [Monitoring](#monitoring)
-- [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
 
 ---
@@ -127,10 +121,6 @@ TreeMap<Double, Queue<Order>>
 Java 17 or higher
 Maven 3.6+
 
-# Optional (for testing)
-curl
-jq (for JSON formatting)
-```
 
 ### Installation
 
