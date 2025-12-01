@@ -4,6 +4,7 @@ import com.trading.trading_order_processor.domain.Order;
 import com.trading.trading_order_processor.domain.OrderBook;
 import com.trading.trading_order_processor.domain.OrderEvent;
 import com.trading.trading_order_processor.domain.TradeExecution;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -16,6 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Component
+@Slf4j
 public class OrderMatchingEngine {
     
     // Maintain separate order book for each symbol
@@ -51,7 +53,7 @@ public class OrderMatchingEngine {
             event.getTimestamp()
         );
         
-        System.out.println("\n📋 Processing Order: " + incomingOrder.getOrderId() + 
+        log.info("\n📋 Processing Order: " + incomingOrder.getOrderId() +
                          " | " + incomingOrder.getSide() + " " + 
                          incomingOrder.getQuantity() + " @ " + incomingOrder.getPrice());
         
@@ -65,7 +67,7 @@ public class OrderMatchingEngine {
         // If order not fully filled, add remaining quantity to book
         if (incomingOrder.getQuantity() > 0) {
             addOrderToBook(book, incomingOrder);
-            System.out.println("  → Remaining " + incomingOrder.getQuantity() + 
+            log.info("  → Remaining " + incomingOrder.getQuantity() +
                              " added to order book");
         }
         
@@ -92,9 +94,9 @@ public class OrderMatchingEngine {
         
         List<TradeExecution> executions = new ArrayList<>();
         TreeMap<Double, Queue<Order>> sellSide = book.getSellOrders();
-        
-        System.out.println("  🔍 Checking SELL side for matches...");
-        System.out.println("  📊 Best SELL price: " + 
+
+        log.info("  🔍 Checking SELL side for matches...");
+        log.info("  📊 Best SELL price: " +
             (sellSide.isEmpty() ? "N/A" : sellSide.firstKey()));
         
         // Iterate through sell orders from lowest to highest price
@@ -106,7 +108,7 @@ public class OrderMatchingEngine {
             
             // Check if prices match: BUY price >= SELL price
             if (buyOrder.getPrice() < sellPrice) {
-                System.out.println("  ❌ No match: Buy price " + buyOrder.getPrice() + 
+                log.info("  ❌ No match: Buy price " + buyOrder.getPrice() +
                                  " < Sell price " + sellPrice);
                 break; // No more matches possible
             }
@@ -128,13 +130,13 @@ public class OrderMatchingEngine {
             
             // Execution price is the maker's price (sell order was there first)
             double executionPrice = sellPrice;
-            
-            System.out.println("  ✅ MATCH FOUND!");
-            System.out.println("    Buy Order:  " + buyOrder.getOrderId() + " (" + 
+
+            log.info("  ✅ MATCH FOUND!");
+            log.info("    Buy Order:  " + buyOrder.getOrderId() + " (" +
                              buyOrder.getQuantity() + " @ " + buyOrder.getPrice() + ")");
-            System.out.println("    Sell Order: " + sellOrder.getOrderId() + " (" + 
+            log.info("    Sell Order: " + sellOrder.getOrderId() + " (" +
                              sellOrder.getQuantity() + " @ " + sellOrder.getPrice() + ")");
-            System.out.println("    Executing:  " + tradeQty + " @ " + executionPrice);
+            log.info("    Executing:  " + tradeQty + " @ " + executionPrice);
             
             // Create trade execution
             TradeExecution trade = new TradeExecution(
@@ -156,10 +158,10 @@ public class OrderMatchingEngine {
             // Update order statuses
             if (buyOrder.getQuantity() == 0) {
                 buyOrder.setStatus("FILLED");
-                System.out.println("    Buy order FULLY FILLED");
+                log.info("    Buy order FULLY FILLED");
             } else {
                 buyOrder.setStatus("PARTIAL");
-                System.out.println("    Buy order PARTIALLY FILLED (" + 
+                log.info("    Buy order PARTIALLY FILLED (" +
                                  buyOrder.getQuantity() + " remaining)");
             }
             
@@ -167,17 +169,17 @@ public class OrderMatchingEngine {
                 sellOrder.setStatus("FILLED");
                 ordersAtPrice.poll(); // Remove from queue
                 book.getOrderRegistry().remove(sellOrder.getOrderId());
-                System.out.println("    Sell order FULLY FILLED (removed from book)");
+                log.info("    Sell order FULLY FILLED (removed from book)");
             } else {
                 sellOrder.setStatus("PARTIAL");
-                System.out.println("    Sell order PARTIALLY FILLED (" + 
+                log.info("    Sell order PARTIALLY FILLED (" +
                                  sellOrder.getQuantity() + " remaining)");
             }
             
             // Remove price level if no more orders
             if (ordersAtPrice.isEmpty()) {
                 sellSide.remove(sellPrice);
-                System.out.println("    Price level " + sellPrice + " cleared");
+                log.info("    Price level " + sellPrice + " cleared");
             }
         }
         
@@ -196,9 +198,9 @@ public class OrderMatchingEngine {
         
         List<TradeExecution> executions = new ArrayList<>();
         TreeMap<Double, Queue<Order>> buySide = book.getBuyOrders();
-        
-        System.out.println("  🔍 Checking BUY side for matches...");
-        System.out.println("  📊 Best BUY price: " + 
+
+        log.info("  🔍 Checking BUY side for matches...");
+        log.info("  📊 Best BUY price: " +
             (buySide.isEmpty() ? "N/A" : buySide.firstKey()));
         
         // Iterate through buy orders from highest to lowest price
@@ -210,7 +212,7 @@ public class OrderMatchingEngine {
             
             // Check if prices match: SELL price <= BUY price
             if (sellOrder.getPrice() > buyPrice) {
-                System.out.println("  ❌ No match: Sell price " + sellOrder.getPrice() + 
+                log.info("  ❌ No match: Sell price " + sellOrder.getPrice() +
                                  " > Buy price " + buyPrice);
                 break;
             }
@@ -225,13 +227,13 @@ public class OrderMatchingEngine {
             
             int tradeQty = Math.min(sellOrder.getQuantity(), buyOrder.getQuantity());
             double executionPrice = buyPrice; // Maker's price
-            
-            System.out.println("  ✅ MATCH FOUND!");
-            System.out.println("    Sell Order: " + sellOrder.getOrderId() + " (" + 
+
+            log.info("  ✅ MATCH FOUND!");
+            log.info("    Sell Order: " + sellOrder.getOrderId() + " (" +
                              sellOrder.getQuantity() + " @ " + sellOrder.getPrice() + ")");
-            System.out.println("    Buy Order:  " + buyOrder.getOrderId() + " (" + 
+            log.info("    Buy Order:  " + buyOrder.getOrderId() + " (" +
                              buyOrder.getQuantity() + " @ " + buyOrder.getPrice() + ")");
-            System.out.println("    Executing:  " + tradeQty + " @ " + executionPrice);
+            log.info("    Executing:  " + tradeQty + " @ " + executionPrice);
             
             TradeExecution trade = new TradeExecution(
                 "TRD-" + tradeIdGenerator.incrementAndGet(),
@@ -251,10 +253,10 @@ public class OrderMatchingEngine {
             
             if (sellOrder.getQuantity() == 0) {
                 sellOrder.setStatus("FILLED");
-                System.out.println("    Sell order FULLY FILLED");
+                log.info("    Sell order FULLY FILLED");
             } else {
                 sellOrder.setStatus("PARTIAL");
-                System.out.println("    Sell order PARTIALLY FILLED (" + 
+                log.info("    Sell order PARTIALLY FILLED (" +
                                  sellOrder.getQuantity() + " remaining)");
             }
             
@@ -262,16 +264,16 @@ public class OrderMatchingEngine {
                 buyOrder.setStatus("FILLED");
                 ordersAtPrice.poll();
                 book.getOrderRegistry().remove(buyOrder.getOrderId());
-                System.out.println("    Buy order FULLY FILLED (removed from book)");
+                log.info("    Buy order FULLY FILLED (removed from book)");
             } else {
                 buyOrder.setStatus("PARTIAL");
-                System.out.println("    Buy order PARTIALLY FILLED (" + 
+                log.info("    Buy order PARTIALLY FILLED (" +
                                  buyOrder.getQuantity() + " remaining)");
             }
             
             if (ordersAtPrice.isEmpty()) {
                 buySide.remove(buyPrice);
-                System.out.println("    Price level " + buyPrice + " cleared");
+                log.info("    Price level " + buyPrice + " cleared");
             }
         }
         
@@ -297,8 +299,8 @@ public class OrderMatchingEngine {
         
         // Register order for lookups
         book.getOrderRegistry().put(order.getOrderId(), order);
-        
-        System.out.println("  📚 Order added to book: " + order.getOrderId() + 
+
+        log.info("  📚 Order added to book: " + order.getOrderId() +
                          " | " + order.getSide() + " " + order.getQuantity() + 
                          " @ " + order.getPrice());
     }
