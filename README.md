@@ -209,15 +209,6 @@ java -jar trading-order-processor-0.0.1-SNAPSHOT.jar \
 5. **Order Book Depth** - Number of resting orders per symbol
 
 
-**Key Log Messages:**
-```
-✅ Matched: ORD-123 | 1 trade(s) executed
-⏳ Pending: ORD-124 | Added to order book, waiting for match
-🔴 ORDER REJECTED: Ring buffer full!
-⚠️ WARNING: Ring buffer 85.0% full
-```
-
-
 
 ## 🎓 Learning Resources
 
